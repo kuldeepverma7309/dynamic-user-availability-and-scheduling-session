@@ -30,7 +30,7 @@ const sessionSchema = new mongoose.Schema({
   duration: {
     type: Number,
     required: true,
-    default: 30 // Time in minutes, can be 30, 60, etc.
+    default: 30 
   },
   type: {
     type: String,
@@ -44,7 +44,7 @@ const sessionSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: true, // Make it required if needed
+    required: true, 
     trim: true
   },
   description: {

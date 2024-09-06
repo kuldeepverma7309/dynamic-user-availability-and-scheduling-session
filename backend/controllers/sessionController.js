@@ -15,11 +15,9 @@ exports.createSession = async (req, res) => {
         { end: { $gt: start, $lte: end } },
       ],
     });
-
     if (conflictingSession) {
       return res.status(400).json({ message: 'Session time conflicts with an existing session' });
     }
-
     const newSession = await Session.create({
       admin,
       start,
@@ -29,10 +27,6 @@ exports.createSession = async (req, res) => {
       title,
       description
     });
-
-    // Emit session update to all connected clients via Socket.IO
-    req.io.emit('session_update', newSession);
-
     // Notify all attendees
     await notifySessionUsers(newSession._id, 'sessionCreated');
 
@@ -53,11 +47,6 @@ exports.updateSession = async (req, res) => {
     if (!updatedSession) {
       return res.status(404).json({ message: 'Session not found' });
     }
-
-    // Emit session update to all connected clients via Socket.IO
-    req.io.emit('session_update', updatedSession);
-
-    // Notify all attendees
     await notifySessionUsers(sessionId, 'sessionUpdated');
 
     res.status(200).json(updatedSession);
@@ -65,7 +54,6 @@ exports.updateSession = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 // Delete a session
 exports.deleteSession = async (req, res) => {
   try {
@@ -76,9 +64,6 @@ exports.deleteSession = async (req, res) => {
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-
-    // Emit session update to all connected clients via Socket.IO
-    req.io.emit('session_update', { deleted: true, sessionId });
 
     // Notify all attendees
     await notifySessionUsers(sessionId, 'sessionDeleted');
@@ -128,5 +113,39 @@ exports.getSessionById = async (req, res) => {
     res.status(200).json(session);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// get all incompleted sessions
+exports.getIncompletedSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({status:"scheduled"});
+    if (sessions.length === 0) {
+      return res.status(404).json({ message: 'No sessions found' });
+    }
+    res.status(200).json(sessions);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
+// update the status of the session
+exports.updateSessionStatus = async (req, res) => {
+  try {
+    const sessionId = req.params.id;
+    const { status } = req.body;
+
+    const updatedSession = await Session.findByIdAndUpdate(sessionId, { status }, { new: true });
+
+    if (!updatedSession) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Notify all attendees
+    await notifySessionUsers(sessionId, 'sessionUpdated');
+
+    res.status(200).json(updatedSession);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

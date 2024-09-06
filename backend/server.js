@@ -10,18 +10,19 @@ const availabilityRoutes = require('./routes/availabilityRoutes');
 const sessionRoutes = require('./routes/sessionRoutes');
 const { errorHandler, notFound } = require('./middleware/errorMiddleware');
 const {socketMiddleware} = require('./middleware/socketMiddleware');
+const { sendSessionEmail } = require('./config/nodemailer');
 
 // Load environment variables
 dotenv.config();
 
-// Initialize Express App
+
 const app = express();
-const httpServer = createServer(app); // Create HTTP server for Socket.IO
+const httpServer = createServer(app); 
 
 // Initialize Socket.IO server
 const io = new Server(httpServer, {
     cors: {
-        origin: "*", // Allow requests from any origin (adjust if necessary)
+        origin: "*", 
         methods: ["GET", "POST"]
     }
 });
@@ -51,28 +52,49 @@ app.use('/api/session', sessionRoutes);
 
 // Error handling middleware
 app.use(notFound); // Handle 404 errors
-app.use(errorHandler); // General error handler
+app.use(errorHandler); 
 
-// // Socket.IO connection
-// io.on('connection', (socket) => {
-//   console.log(`Client connected: ${socket.id}`);
+io.on('connection', (socket) => {
+  console.log(`Client connected: ${socket.id}`);
 
-//   // Listen for session updates
-//   socket.on('session_update', (sessionData) => {
-//     io.emit('session_update', sessionData); // Emit to all clients
-//   });
+  // Listen for session updates
+  socket.on('session_update', (sessionData) => {
+    io.emit('session_update', sessionData); 
+    // Send email regarding session update
+    const { email, status, title } = sessionData;
+    let subject, text;
+    console.log("status: ", status);
+    switch (status) {
+      case 'scheduled':
+        subject = 'Session Scheduled';
+        text = `Your session "${title}" has been scheduled.`;
+        break;
+      case 'updated':
+        subject = 'Session Updated';
+        text = `Your session "${title}" has been updated.`;
+        break;
+      case 'canceled':
+        subject = 'Session Canceled';
+        text = `Your session "${title}" has been canceled.`;
+        break;
+      default:
+        subject = 'Session Notification';
+        text = `Your session "${title}" has a new update.`;
+    }
+    email?.forEach((email)=>sendSessionEmail(email, subject, text));
+    
+  });
 
-//   // Listen for notification updates
-//   socket.on('notification', (notificationData) => {
-//     io.emit('notification', notificationData); // Emit to all clients
-//   });
+  // Listen for notification updates
+  socket.on('notification', (notificationData) => {
+    io.emit('notification', notificationData); 
+  });
 
-//   socket.on('disconnect', () => {
-//     console.log(`Client disconnected: ${socket.id}`);
-//   });
-// });
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+  });
+});
 
-// Start server on specified port
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

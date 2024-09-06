@@ -3,10 +3,15 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useSocket } from '../utils/SocketProvider';
 
 const EditSession = () => {
-  const { id } = useParams(); // Get session ID from URL
+  const socket = useSocket();
+  const { id } = useParams(); 
   const token = useSelector(state => state.auth.token);
+  const sessions = useSelector(state => state.session.sessions);
+  const [email, setEmail] = useState([]);
+  const [session, setSession] = useState(null);
   const [sessionData, setSessionData] = useState({
     title: '',
     description: '',
@@ -16,8 +21,8 @@ const EditSession = () => {
   });
   const navigate = useNavigate();
 
-   // Function to format date as "yyyy-MM-ddThh:mm" for datetime-local input
-   const formatDateForInput = (isoDate) => {
+  // Function to format date as "yyyy-MM-ddThh:mm" for datetime-local input
+  const formatDateForInput = (isoDate) => {
     const date = new Date(isoDate);
     const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
     return offsetDate.toISOString().slice(0, 16);
@@ -47,6 +52,15 @@ const EditSession = () => {
     fetchSessionData();
   }, [id, token]);
 
+  useEffect(() => {
+    // Update session and email state when sessions or id changes
+    const selectedSession = sessions.find(session => session._id === id);
+    if (selectedSession) {
+      setSession(selectedSession);
+      setEmail(selectedSession.attendees.map(attendee => attendee.email));
+    }
+  }, [sessions, id]);
+
   const handleChange = (e) => {
     setSessionData({ ...sessionData, [e.target.name]: e.target.value });
   };
@@ -64,17 +78,23 @@ const EditSession = () => {
       if (res.status === 200) {
         toast.dismiss(toastId);
         toast.success('Session updated successfully');
-        navigate('/sessions'); // Redirect to sessions list page
+        socket.emit('session_update', { ...sessionData, email,status: 'updated' });
+        navigate('/sessions'); 
       } else {
         toast.error('Failed to update session');
         toast.dismiss(toastId);
       }
     } catch (error) {
-        toast.dismiss(toastId);
+      toast.dismiss(toastId);
       toast.error('Error updating session');
       console.error('Error:', error);
     }
   };
+
+  socket.on('session_update', (updatedSession) => {
+    toast.success('Session status updated');
+  });
+  
 
   return (
     <div className="max-w-3xl w-full mx-auto mt-10 bg-white p-6 rounded-lg shadow-md">

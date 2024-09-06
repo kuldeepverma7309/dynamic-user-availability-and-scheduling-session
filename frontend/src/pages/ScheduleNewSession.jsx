@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
+import { useSocket } from '../utils/SocketProvider';
 
 const AvailableUsersTable = () => {
   const { user } = useSelector((state) => state.auth); 
   const { availabilities } = useSelector((state) => state.admin);
   const token = useSelector((state) => state.auth.token);
+  const socket = useSocket();
   
   const [users, setUsers] = useState([...availabilities]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -51,6 +53,7 @@ const AvailableUsersTable = () => {
         attendees: sessionDetails.type === 'group' ? selectedUsers.map(u => ({ name: u?.user?.name, email: u?.user?.email })) : selectedUsers?.length ? [{ name: selectedUsers[0].user?.name, email: selectedUsers[0]?.user?.email }] : [],
       },config);
       toast.success('Session scheduled successfully');
+      socket.emit('session_update', { status: 'scheduled', title: sessionDetails.title });
       setSessionDetails({
         title: '',
         description: '',
@@ -65,6 +68,10 @@ const AvailableUsersTable = () => {
       toast.error('Error scheduling session');
     }
   };
+
+  socket.on('session_update', (sessionData) => {
+    toast.success("new session created");
+  });
 
   return (
     <div className="p-6 max-w-4xl mx-auto">

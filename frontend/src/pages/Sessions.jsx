@@ -28,7 +28,6 @@ const Sessions = () => {
         console.log("email", email);
         const response = await axios.get(`http://localhost:5000/api/session/user/${email}`, config); 
         dispatch(getSessions(response.data));
-        console.log(response.data);
         toast.success('Sessions fetched successfully');
       } catch (error) {
         console.error('Error fetching sessions:', error);

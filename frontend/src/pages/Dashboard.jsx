@@ -118,10 +118,10 @@ const Dashboard = () => {
           </div>
           <div className="p-6 bg-white rounded-lg shadow-md text-center">
             <Link
-              to="/availability"
+              to="/update-session-status"
               className="bg-green-500 text-white py-2 px-4 rounded-lg inline-block hover:bg-green-600"
             >
-              Update Your Availability
+              Update Session Status
             </Link>
           </div>
         </div>

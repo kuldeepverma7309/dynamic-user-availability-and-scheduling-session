@@ -12,8 +12,13 @@ router.get('/user/:email', sessionController.getUserSessions);
 
 // Get sessions for admin
 router.get('/admin/:admin', verifyRole,sessionController.getAdminSessions);
+// Get all incompleted sessions
+router.get('/incompleted', sessionController.getIncompletedSessions);
 // Update an existing session
 router.put('/edit/:id',verifyRole, sessionController.updateSession);
+
+// Update session status
+router.put('/status/:id',verifyRole, sessionController.updateSessionStatus);
 
 // Get a session by ID
 router.get('/get/:id', sessionController.getSessionById);

@@ -11,10 +11,15 @@ import EditSession from './pages/EditSession'
 import EditAvailability from './pages/EditAvailabilityCard'
 import CreateAvailability from './pages/CreateAvailability'
 import ScheduleNewSession from './pages/ScheduleNewSession'
+import SessionTable from './pages/UpdateSessionStatus'
+import Footer from './components/Footer'
+import { SocketProvider } from './utils/SocketProvider'
+import NotFound from './pages/NotFound'
 
 const App = () => {
   return (
-    <div className='flex flex-col bg-slate-200 w-full'>
+    <SocketProvider>
+      <div className='flex flex-col bg-slate-200 w-full'>
       <Header />
       <Routes>
         <Route path="/" element={<Home/>} />
@@ -27,9 +32,13 @@ const App = () => {
         <Route path='/edit-availability/:id' element={<EditAvailability/>} />
         <Route path='/create-availability' element={<CreateAvailability/>} />
         <Route path='/dashboard' element={<Dashboard/>} />
+        <Route path='/update-session-status' element={<SessionTable/>} />
         <Route path='/schedule-new-session' element={<ScheduleNewSession/>} />
+        <Route path='*' element={<NotFound/>} />
       </Routes>
+      <Footer/>
     </div>
+    </SocketProvider>
   )
 }
 
